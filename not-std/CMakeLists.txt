@@ -3,7 +3,7 @@
 #
 
 # Add source to this project's executable.
-add_executable (not-std "not-std.cpp" "not-std.h")
+add_executable (not-std "not-std.cpp" "not-std.h" "test-not-std.cpp")
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET not-std PROPERTY CXX_STANDARD 20)
