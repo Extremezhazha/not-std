@@ -4,6 +4,7 @@
 #pragma once
 
 #include <iostream>
+#include <array>
 
 // TODO: Reference additional headers your program requires here.
 
@@ -130,4 +131,104 @@ namespace not_std {
 
 	template <std::size_t idx, typename Type>
 	using get_tp_t = typename get_tp<idx, Type>::type;
+
+	template <typename Type>
+	struct is_non_cv_pointer : false_type {};
+
+	template <typename Type>
+	struct is_non_cv_pointer<Type*> : true_type {};
+
+	template <typename Type>
+	inline constexpr bool is_non_cv_pointer_v = is_non_cv_pointer<Type>::value;
+
+	template <typename Type>
+	struct remove_pointer_impl {
+		using type = Type;
+	};
+
+	template <typename Type>
+	struct remove_pointer_impl<Type*> {
+		using type = Type;
+	};
+
+	template <typename Type>
+	using remove_pointer_t = if_type_t<is_non_cv_pointer_v<remove_cv_t<Type>>, typename remove_pointer_impl<remove_cv_t<Type>>::type, Type>;
+
+	template <typename Type>
+	struct remove_pointer {
+		using type = typename remove_pointer_t<Type>;
+	};
+
+	template <typename Type>
+	struct remove_extent {
+		using type = Type;
+	};
+
+	template <typename Type>
+	struct remove_extent<Type[]> {
+		using type = Type;
+	};
+
+	template <typename Type, std::size_t size>
+	struct remove_extent<Type[size]> {
+		using type = Type;
+	};
+
+	template <typename Type>
+	using remove_extent_t = typename remove_extent<Type>::type;
+
+	template <typename Type, template<typename, bool> typename recursive>
+	struct remove_all_extent_recr_impl : recursive<Type, true> {};
+
+	template <typename Type, template<typename, bool> typename recursive>
+	struct remove_all_extent_recr_impl<Type[], recursive> : recursive<Type, false> {};
+
+	template <typename Type, template<typename, bool> typename recursive, std::size_t size>
+	struct remove_all_extent_recr_impl<Type[size], recursive> : recursive<Type, false> {};
+
+	template <typename Type, bool isBase>
+	struct remove_all_extent_impl : remove_all_extent_recr_impl<Type, remove_all_extent_impl> {};
+
+	template <typename Type>
+	struct remove_all_extent_impl<Type, true> {
+		using type = Type;
+	};
+
+	template <typename Type>
+	using remove_all_extent = remove_all_extent_impl<Type, false>;
+
+	template <typename Type>
+	using remove_all_extent_t = typename remove_all_extent<Type>::type;
+
+	template <typename Type>
+	struct remove_extent_extended : remove_extent<Type> {};
+
+	template <typename Type, std::size_t size>
+	struct remove_extent_extended<std::array<Type, size>> {
+		using type = Type;
+	};
+
+	template <typename Type>
+	using remove_extent_extended_t = typename remove_extent_extended<Type>::type;
+
+	template <typename Type, bool isBase>
+	struct remove_all_extent_extended_impl : remove_all_extent_recr_impl<Type, remove_all_extent_extended_impl> {};
+
+	template <typename Type>
+	struct remove_all_extent_extended_impl<Type, true> {
+		using type = Type;
+	};
+
+	template <typename Type, bool isBase, std::size_t size>
+	struct remove_all_extent_extended_impl<std::array<Type, size>, isBase> : remove_all_extent_recr_impl<Type, remove_all_extent_extended_impl> {};
+
+	template <typename Type,  std::size_t size>
+	struct remove_all_extent_extended_impl<std::array<Type, size>, true> : remove_all_extent_recr_impl<Type, remove_all_extent_extended_impl> {};
+
+	template <typename Type>
+	using remove_all_extent_extended = remove_all_extent_extended_impl<Type, false>;
+
+	template <typename Type>
+	using remove_all_extent_extended_t = typename remove_all_extent_extended<Type>::type;
 };
+
