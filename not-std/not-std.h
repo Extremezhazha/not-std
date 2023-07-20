@@ -132,6 +132,100 @@ namespace not_std {
 	template <std::size_t idx, typename Type>
 	using get_tp_t = typename get_tp<idx, Type>::type;
 
+	template <typename T, typename U>
+	struct concat_tp {
+		using type = void;
+	};
+
+	template <typename... Types1, typename... Types2>
+	struct concat_tp<type_pack<Types1...>, type_pack<Types2...>> {
+		using type = type_pack<Types1..., Types2...>;
+	};
+
+	template <typename T, typename U>
+	using concat_tp_t = typename concat_tp<T, U>::type;
+
+	template <typename T, typename U>
+	struct concat_tp_tail;
+
+	template <typename U, typename... Types>
+	struct concat_tp_tail<type_pack<Types...>, U> : concat_tp<type_pack<Types...>, type_pack<U>> {};
+
+	template <typename T, typename U>
+	using concat_tp_tail_t = typename concat_tp_tail<T, U>::type;
+
+	template <typename T, typename U>
+	struct concat_tp_head;
+
+	template <typename U, typename... Types>
+	struct concat_tp_head<U, type_pack<Types...>> : concat_tp<type_pack<U>, type_pack<Types...>> {};
+
+	template <typename T, typename U>
+	using concat_tp_head_t = typename concat_tp_head<T, U>::type;
+
+	template <typename T>
+	struct flatten_tp {
+		using type = T;
+	};
+
+	template <typename T>
+	struct is_tp : false_type {};
+
+	template <typename... Types>
+	struct is_tp<type_pack<Types...>> : true_type {};
+
+	template <typename Type>
+	inline constexpr bool is_tp_v = is_tp<Type>::value;
+
+	template <typename First, typename... Rest>
+	struct flatten_tp<type_pack<First, Rest...>> {
+		using type = typename if_type_t<is_tp_v<typename flatten_tp<First>::type>,
+			concat_tp_t<typename flatten_tp<First>::type, typename flatten_tp<type_pack<Rest...>>::type>,
+			concat_tp_head_t<typename flatten_tp<First>::type, typename flatten_tp<type_pack<Rest...>>::type>>;
+	};
+
+	template <typename Type>
+	using flatten_tp_t = typename flatten_tp<Type>::type;
+
+	template <template<typename, typename> typename Op, typename... Types>
+	struct unary_right_fold {
+		using type = void;
+	};
+
+	template <template<typename, typename> typename Op, typename First, typename... Rest>
+	struct unary_right_fold<Op, First, Rest...> : Op<First, typename unary_right_fold<Op, Rest...>::type> {};
+
+	template <template<typename, typename> typename Op, typename First, typename Second>
+	struct unary_right_fold<Op, First, Second> : Op<First, Second> {};
+
+	template <typename... Types>
+	using concat_all_tp_t = typename unary_right_fold<concat_tp, Types...>::type;
+
+	template <typename... Types>
+	struct concat_all_tp {
+		using type = typename concat_all_tp_t<Types...>;
+	};
+
+	template <std::size_t splitAt, typename Lhs, typename Rhs>
+	struct split_impl;
+
+	template <typename Lhs, typename Rhs>
+	struct split_impl<0, Lhs, Rhs> {
+		using type = type_pack<Lhs, Rhs>
+	};
+
+	template <std::size_t splitAt, typename RhsFirst, typename... LhsTypes, typename... RhsRest>
+	struct split_impl<splitAt, type_pack<LhsTypes...>, type_pack<RhsFirst, RhsRest...>> : split_impl<splitAt - 1, type_pack<LhsTypes..., RhsFirst>, type_pack<RhsRest...>> {};
+
+	template <std::size_t splitAt, typename Type>
+	struct split_tp;
+
+	template <std::size_t splitAt, typename... Types>
+	struct split_tp<splitAt, type_pack<Types...>> : split_impl<splitAt, type_pack<>, type_pack<Types...>> {};
+
+	template <std::size_t splitAt, typename Type>
+	using split_tp_t = typename split_tp<splitAt, Type>::type;
+
 	template <typename Type>
 	struct is_non_cv_pointer : false_type {};
 

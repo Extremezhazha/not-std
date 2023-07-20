@@ -85,7 +85,7 @@ void testRemoveCV() {
 	static_assert(not_std::is_same_v<int, not_std::remove_cv_t<const int volatile>>);
 }
 
-void testTypePack() {
+void testGetTypePack() {
 	static_assert(not_std::is_same_v<int, not_std::get_tp_t<0, int>>);
 	static_assert(not_std::is_same_v<int, not_std::get_tp_t<0, not_std::type_pack<int>>>);
 	static_assert(not_std::is_same_v<int, not_std::get_tp_t<0, not_std::type_pack<int, double>>>);
@@ -94,6 +94,97 @@ void testTypePack() {
 
 	static_assert(not_std::is_same_v<void, not_std::get_tp_t<0, not_std::type_pack<>>>);
 	static_assert(not_std::is_same_v<void, not_std::get_tp_t<1, not_std::type_pack<int>>>);
+}
+
+void testIsTypePack() {
+	static_assert(!not_std::is_tp_v<int>);
+
+	static_assert(not_std::is_tp_v<not_std::type_pack<>>);
+
+	static_assert(not_std::is_tp_v<not_std::type_pack<int>>);
+
+	static_assert(not_std::is_tp_v<not_std::type_pack<int, int>>);
+}
+
+void testConcatTypePack() {
+	static_assert(not_std::is_same_v<not_std::type_pack<>, not_std::concat_tp_t<not_std::type_pack<>, not_std::type_pack<>>>);
+
+	static_assert(not_std::is_same_v<not_std::type_pack<int>, not_std::concat_tp_t<not_std::type_pack<int>, not_std::type_pack<>>>);
+	static_assert(not_std::is_same_v<not_std::type_pack<int>, not_std::concat_tp_t<not_std::type_pack<>, not_std::type_pack<int>>>);
+
+	static_assert(not_std::is_same_v<not_std::type_pack<int, int>, not_std::concat_tp_t<not_std::type_pack<int>, not_std::type_pack<int>>>);
+
+	static_assert(not_std::is_same_v<
+		not_std::type_pack<int, double, char, float>, 
+		not_std::concat_tp_t<not_std::type_pack<int, double>, not_std::type_pack<char, float>>>);
+
+}
+
+void testConcatTypePackTail() {
+	static_assert(not_std::is_same_v<not_std::type_pack<int>, not_std::concat_tp_tail_t<not_std::type_pack<>, int>>);
+
+	static_assert(not_std::is_same_v<not_std::type_pack<int, int>, not_std::concat_tp_tail_t<not_std::type_pack<int>, int>>);
+
+	static_assert(not_std::is_same_v<not_std::type_pack<int, not_std::type_pack<int>>, not_std::concat_tp_tail_t<not_std::type_pack<int>, not_std::type_pack<int>>>);
+}
+
+void testConcatTypePackHead() {
+	static_assert(not_std::is_same_v<not_std::type_pack<int>, not_std::concat_tp_head_t<int, not_std::type_pack<>>>);
+
+	static_assert(not_std::is_same_v<not_std::type_pack<int, int>, not_std::concat_tp_head_t<int, not_std::type_pack<int>>>);
+
+	static_assert(not_std::is_same_v<not_std::type_pack<not_std::type_pack<int>, int>, not_std::concat_tp_head_t<not_std::type_pack<int>, not_std::type_pack<int>>>);
+}
+
+void testFlattenTypePack() {
+	static_assert(not_std::is_same_v<int, not_std::flatten_tp_t<int>>);
+
+	static_assert(not_std::is_same_v<not_std::type_pack<>, not_std::flatten_tp_t<not_std::type_pack<>>>);
+
+	static_assert(not_std::is_same_v<not_std::type_pack<int>, not_std::flatten_tp_t<not_std::type_pack<int>>>);
+
+	static_assert(not_std::is_same_v<not_std::type_pack<int>, not_std::flatten_tp_t<not_std::type_pack<not_std::type_pack<int>>>>);
+
+	static_assert(not_std::is_same_v<not_std::type_pack<int, int>, not_std::flatten_tp_t<not_std::type_pack<int, not_std::type_pack<int>>>>);
+
+	static_assert(not_std::is_same_v<not_std::type_pack<int, int, int, int, int>, 
+		not_std::flatten_tp_t<not_std::type_pack<int, not_std::type_pack<int>, not_std::type_pack<not_std::type_pack<int, int>, int>>>>);
+}
+
+void testConcatAllTypePack() {
+	static_assert(not_std::is_same_v<not_std::type_pack<int, int>, not_std::concat_all_tp_t<not_std::type_pack<int>, not_std::type_pack<int>>>);
+
+	static_assert(not_std::is_same_v<not_std::type_pack<int, double, int>, not_std::concat_all_tp_t<not_std::type_pack<int, double>, not_std::type_pack<int>>>);
+
+	static_assert(not_std::is_same_v<not_std::type_pack<int, double, int>, not_std::concat_all_tp_t<not_std::type_pack<int>, not_std::type_pack<double>, not_std::type_pack<int>>>);
+
+}
+
+void testSplitTypePack() {
+	static_assert(not_std::is_same_v<
+		not_std::type_pack<not_std::type_pack<>, not_std::type_pack<>>,
+		not_std::split_tp_t<0, not_std::type_pack<>>
+	>);
+
+	static_assert(not_std::is_same_v<
+		not_std::type_pack<not_std::type_pack<>, not_std::type_pack<int>>,
+		not_std::split_tp_t<0, not_std::type_pack<int>>
+	>);
+
+	static_assert(not_std::is_same_v<
+		not_std::type_pack<not_std::type_pack<int>, not_std::type_pack<int>>,
+		not_std::split_tp_t<1, not_std::type_pack<int, int>>
+	>);
+
+	static_assert(not_std::is_same_v<
+		not_std::type_pack<not_std::type_pack<int>, not_std::type_pack<double, int>>,
+		not_std::split_tp_t<1, not_std::type_pack<int, double, int>>
+	>);
+
+	static_assert(not_std::is_same_v<
+		not_std::type_pack<not_std::type_pack<int, double>, not_std::type_pack<int>>,
+		not_std::split_tp_t<2, not_std::type_pack<int, double, int>>
+	>);
 }
 
 void testRemovePointer() {
