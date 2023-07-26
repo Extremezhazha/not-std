@@ -264,3 +264,82 @@ void testRemoveAllExtentExtended() {
 
 	static_assert(not_std::is_same_v<int*, not_std::remove_all_extent_extended_t<int*>>);
 }
+
+void testIsWellFormed() {
+	static_assert(not_std::is_well_formed_v<int>);
+	static_assert(not_std::is_well_formed_v<int*>);
+}
+
+void testIsBoundedArray() {
+	static_assert(!not_std::is_bounded_array_v<int>);
+	static_assert(!not_std::is_bounded_array_v<int[]>);
+	static_assert(not_std::is_bounded_array_v<int[3]>);
+}
+
+void testIsUnboundedArray() {
+	static_assert(!not_std::is_unbounded_array_v<int>);
+	static_assert(not_std::is_unbounded_array_v<int[]>);
+	static_assert(!not_std::is_unbounded_array_v<int[3]>);
+}
+
+void testIsArray() {
+	static_assert(!not_std::is_array_v<int>);
+	static_assert(not_std::is_array_v<int[]>);
+	static_assert(not_std::is_array_v<int[3]>);
+}
+
+void testIsLvalueReference() {
+	static_assert(!not_std::is_lvalue_reference_v<int>);
+	static_assert(not_std::is_lvalue_reference_v<int&>);
+	static_assert(not_std::is_lvalue_reference_v<const int &>);
+	static_assert(not_std::is_lvalue_reference_v<int & const>);
+	static_assert(!not_std::is_lvalue_reference_v<int &&>);
+	static_assert(!not_std::is_lvalue_reference_v<const int &&>);
+	static_assert(!not_std::is_lvalue_reference_v<int && const>);
+}
+
+void testIsRvalueReference() {
+	static_assert(!not_std::is_rvalue_reference_v<int>);
+	static_assert(!not_std::is_rvalue_reference_v<int&>);
+	static_assert(!not_std::is_rvalue_reference_v<const int&>);
+	static_assert(!not_std::is_rvalue_reference_v<int& const>);
+	static_assert(not_std::is_rvalue_reference_v<int&&>);
+	static_assert(not_std::is_rvalue_reference_v<const int&&>);
+	static_assert(not_std::is_rvalue_reference_v<int&& const>);
+}
+
+void testIsReference() {
+	static_assert(!not_std::is_reference_v<int>);
+	static_assert(not_std::is_reference_v<int&>);
+	static_assert(not_std::is_reference_v<const int&>);
+	static_assert(not_std::is_reference_v<int& const>);
+	static_assert(not_std::is_reference_v<int&&>);
+	static_assert(not_std::is_reference_v<const int&&>);
+	static_assert(not_std::is_reference_v<int&& const>);
+}
+struct CannotBeDeaultConstructed {
+public:
+	CannotBeDeaultConstructed() = delete;
+	CannotBeDeaultConstructed(CannotBeDeaultConstructed&& other) = delete;
+	CannotBeDeaultConstructed(CannotBeDeaultConstructed& const other) = delete;
+	int someMethod();
+};
+
+void testDeclVal() {
+	static_assert(not_std::is_same_v<int, decltype(not_std::declval<CannotBeDeaultConstructed>().someMethod())>);
+	static_assert(not_std::is_same_v<int, decltype(std::declval<CannotBeDeaultConstructed>().someMethod())>);
+	// The following line should not compile
+	// not_std::declval<CannotBeDeaultConstructed>();
+}
+
+void testAddLvalueReference() {
+	static_assert(not_std::is_same_v<int&, not_std::add_lvalue_reference_t<int>>);
+	static_assert(not_std::is_same_v<int&, not_std::add_lvalue_reference_t<int&>>);
+	static_assert(not_std::is_same_v<int&, not_std::add_lvalue_reference_t<int&&>>);
+}
+
+void testAddRvalueReference() {
+	static_assert(not_std::is_same_v<int&&, not_std::add_rvalue_reference_t<int>>);
+	static_assert(not_std::is_same_v<int&, not_std::add_rvalue_reference_t<int&>>);
+	static_assert(not_std::is_same_v<int&&, not_std::add_rvalue_reference_t<int&&>>);
+}

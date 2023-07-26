@@ -15,6 +15,11 @@ namespace not_std {
 		inline constexpr static T value = value;
 	};
 
+	template <typename T>
+	struct type_wrapper {
+		using type = T;
+	};
+
 	template <bool value>
 	using bool_constant = integral_constant<bool, value>;
 
@@ -36,9 +41,7 @@ namespace not_std {
 	};
 
 	template <typename T, typename U>
-	struct if_type<true, T, U> {
-		using type = T;
-	};
+	struct if_type<true, T, U> : type_wrapper<T> {};
 
 	template <bool cond, typename T, typename U>
 	using if_type_t = typename if_type<cond, T, U>::type;
@@ -80,30 +83,22 @@ namespace not_std {
 	};
 
 	template <typename Type>
-	struct remove_const<Type const> {
-		using type = Type;
-	};
+	struct remove_const<Type const> : type_wrapper<Type> {};
 
 	template <typename Type>
 	using remove_const_t = typename remove_const<Type>::type;
 
 	template <typename Type>
-	struct remove_volatile {
-		using type = Type;
-	};
+	struct remove_volatile : type_wrapper<Type> {};
 
 	template <typename Type>
-	struct remove_volatile<Type volatile> {
-		using type = Type;
-	};
+	struct remove_volatile<Type volatile> : type_wrapper<Type> {};
 
 	template <typename Type>
 	using remove_volatile_t = typename remove_volatile<Type>::type;
 
 	template <typename Type>
-	struct remove_cv {
-		using type = typename remove_volatile_t<typename remove_const_t<Type>>;
-	};
+	struct remove_cv : type_wrapper<typename remove_volatile_t<typename remove_const_t<Type>>> {};
 
 	template <typename Type>
 	using remove_cv_t = remove_cv<Type>::type;
@@ -112,35 +107,25 @@ namespace not_std {
 	struct type_pack {};
 
 	template <std::size_t idx, typename Type>
-	struct get_tp {
-		using type = Type;
-	};
+	struct get_tp : type_wrapper<Type> {};
 
 	template <std::size_t idx, typename... Types>
-	struct get_tp<idx, type_pack<Types...>> {
-		using type = void;
-	};
+	struct get_tp<idx, type_pack<Types...>> : type_wrapper<void> {};
 
 	template <std::size_t idx, typename First, typename... Rest>
 	struct get_tp<idx, type_pack<First, Rest...>> : get_tp<idx - 1, type_pack<Rest...>> {};
 
 	template <typename First, typename... Rest>
-	struct get_tp<0, type_pack<First, Rest...>> {
-		using type = First;
-	};
+	struct get_tp<0, type_pack<First, Rest...>> : type_wrapper<First> {};
 
 	template <std::size_t idx, typename Type>
 	using get_tp_t = typename get_tp<idx, Type>::type;
 
 	template <typename T, typename U>
-	struct concat_tp {
-		using type = void;
-	};
+	struct concat_tp : type_wrapper<void> {};
 
 	template <typename... Types1, typename... Types2>
-	struct concat_tp<type_pack<Types1...>, type_pack<Types2...>> {
-		using type = type_pack<Types1..., Types2...>;
-	};
+	struct concat_tp<type_pack<Types1...>, type_pack<Types2...>> : type_wrapper<type_pack<Types1..., Types2...>> {};
 
 	template <typename T, typename U>
 	using concat_tp_t = typename concat_tp<T, U>::type;
@@ -164,9 +149,7 @@ namespace not_std {
 	using concat_tp_head_t = typename concat_tp_head<T, U>::type;
 
 	template <typename T>
-	struct flatten_tp {
-		using type = T;
-	};
+	struct flatten_tp : type_wrapper<T> {};
 
 	template <typename T>
 	struct is_tp : false_type {};
@@ -178,19 +161,16 @@ namespace not_std {
 	inline constexpr bool is_tp_v = is_tp<Type>::value;
 
 	template <typename First, typename... Rest>
-	struct flatten_tp<type_pack<First, Rest...>> {
-		using type = typename if_type_t<is_tp_v<typename flatten_tp<First>::type>,
+	struct flatten_tp<type_pack<First, Rest...>> : type_wrapper<
+		 if_type_t<is_tp_v<typename flatten_tp<First>::type>,
 			concat_tp_t<typename flatten_tp<First>::type, typename flatten_tp<type_pack<Rest...>>::type>,
-			concat_tp_head_t<typename flatten_tp<First>::type, typename flatten_tp<type_pack<Rest...>>::type>>;
-	};
+			concat_tp_head_t<typename flatten_tp<First>::type, typename flatten_tp<type_pack<Rest...>>::type>>> {};
 
 	template <typename Type>
 	using flatten_tp_t = typename flatten_tp<Type>::type;
 
 	template <template<typename, typename> typename Op, typename... Types>
-	struct unary_right_fold {
-		using type = void;
-	};
+	struct unary_right_fold : type_wrapper<void> {};
 
 	template <template<typename, typename> typename Op, typename First, typename... Rest>
 	struct unary_right_fold<Op, First, Rest...> : Op<First, typename unary_right_fold<Op, Rest...>::type> {};
@@ -202,17 +182,13 @@ namespace not_std {
 	using concat_all_tp_t = typename unary_right_fold<concat_tp, Types...>::type;
 
 	template <typename... Types>
-	struct concat_all_tp {
-		using type = typename concat_all_tp_t<Types...>;
-	};
+	struct concat_all_tp : type_wrapper<concat_all_tp_t<Types...>> {};
 
 	template <std::size_t splitAt, typename Lhs, typename Rhs>
 	struct split_impl;
 
 	template <typename Lhs, typename Rhs>
-	struct split_impl<0, Lhs, Rhs> {
-		using type = type_pack<Lhs, Rhs>
-	};
+	struct split_impl<0, Lhs, Rhs> : type_wrapper<type_pack<Lhs, Rhs>> {};
 
 	template <std::size_t splitAt, typename RhsFirst, typename... LhsTypes, typename... RhsRest>
 	struct split_impl<splitAt, type_pack<LhsTypes...>, type_pack<RhsFirst, RhsRest...>> : split_impl<splitAt - 1, type_pack<LhsTypes..., RhsFirst>, type_pack<RhsRest...>> {};
@@ -236,37 +212,25 @@ namespace not_std {
 	inline constexpr bool is_non_cv_pointer_v = is_non_cv_pointer<Type>::value;
 
 	template <typename Type>
-	struct remove_pointer_impl {
-		using type = Type;
-	};
+	struct remove_pointer_impl : type_wrapper<Type> {};
 
 	template <typename Type>
-	struct remove_pointer_impl<Type*> {
-		using type = Type;
-	};
+	struct remove_pointer_impl<Type*> : type_wrapper<Type> {};
 
 	template <typename Type>
 	using remove_pointer_t = if_type_t<is_non_cv_pointer_v<remove_cv_t<Type>>, typename remove_pointer_impl<remove_cv_t<Type>>::type, Type>;
 
 	template <typename Type>
-	struct remove_pointer {
-		using type = typename remove_pointer_t<Type>;
-	};
+	struct remove_pointer : type_wrapper<remove_pointer_t<Type>> {};
 
 	template <typename Type>
-	struct remove_extent {
-		using type = Type;
-	};
+	struct remove_extent : type_wrapper<Type> {};
 
 	template <typename Type>
-	struct remove_extent<Type[]> {
-		using type = Type;
-	};
+	struct remove_extent<Type[]> : type_wrapper<Type> {};
 
 	template <typename Type, std::size_t size>
-	struct remove_extent<Type[size]> {
-		using type = Type;
-	};
+	struct remove_extent<Type[size]> : type_wrapper<Type> {};
 
 	template <typename Type>
 	using remove_extent_t = typename remove_extent<Type>::type;
@@ -284,9 +248,7 @@ namespace not_std {
 	struct remove_all_extent_impl : remove_all_extent_recr_impl<Type, remove_all_extent_impl> {};
 
 	template <typename Type>
-	struct remove_all_extent_impl<Type, true> {
-		using type = Type;
-	};
+	struct remove_all_extent_impl<Type, true> : type_wrapper<Type> {};
 
 	template <typename Type>
 	using remove_all_extent = remove_all_extent_impl<Type, false>;
@@ -298,9 +260,7 @@ namespace not_std {
 	struct remove_extent_extended : remove_extent<Type> {};
 
 	template <typename Type, std::size_t size>
-	struct remove_extent_extended<std::array<Type, size>> {
-		using type = Type;
-	};
+	struct remove_extent_extended<std::array<Type, size>> : type_wrapper<Type> {};
 
 	template <typename Type>
 	using remove_extent_extended_t = typename remove_extent_extended<Type>::type;
@@ -309,9 +269,7 @@ namespace not_std {
 	struct remove_all_extent_extended_impl : remove_all_extent_recr_impl<Type, remove_all_extent_extended_impl> {};
 
 	template <typename Type>
-	struct remove_all_extent_extended_impl<Type, true> {
-		using type = Type;
-	};
+	struct remove_all_extent_extended_impl<Type, true> : type_wrapper<Type> {};
 
 	template <typename Type, bool isBase, std::size_t size>
 	struct remove_all_extent_extended_impl<std::array<Type, size>, isBase> : remove_all_extent_recr_impl<Type, remove_all_extent_extended_impl> {};
@@ -324,5 +282,101 @@ namespace not_std {
 
 	template <typename Type>
 	using remove_all_extent_extended_t = typename remove_all_extent_extended<Type>::type;
+
+	template <typename ...Types>
+	using void_t = void;
+
+	template <typename Type, typename = void>
+	struct is_well_formed_impl : false_type {};
+
+	template <typename Type>
+	struct is_well_formed_impl<Type, void_t<Type>> : true_type {};
+
+	template <typename Type>
+	struct is_well_formed : is_well_formed_impl<Type> {};
+
+	template <typename Type>
+	inline constexpr bool is_well_formed_v = is_well_formed<Type>::value;
+
+	template <typename Type>
+	inline constexpr bool is_unbounded_array_v = false;
+
+	template <typename Type>
+	inline constexpr bool is_unbounded_array_v<Type[]> = true;
+
+
+	template <typename Type>
+	inline constexpr bool is_bounded_array_v = false;
+
+	template <typename Type, std::size_t Size>
+	inline constexpr bool is_bounded_array_v<Type[Size]> = true;
+
+	template <typename Type>
+	inline constexpr bool is_array_v = is_bounded_array_v<Type> || is_unbounded_array_v<Type>;
+
+	template <typename Type>
+	struct is_unbound_array : bool_constant<is_unbounded_array_v<Type>> {};
+
+	template <typename Type>
+	struct is_bounded_array : bool_constant<is_bounded_array_v<Type>> {};
+
+	template <typename Type>
+	struct is_array : bool_constant<is_array_v<Type>> {};
+
+	template <typename Type>
+	inline constexpr bool is_lvalue_reference_v = false;
+
+	template <typename Type>
+	inline constexpr bool is_lvalue_reference_v<Type&> = true;
+
+	template <typename Type>
+	struct is_lvalue_reference : bool_constant<is_lvalue_reference_v<Type>> {};
+	
+	template <typename Type>
+	inline constexpr bool is_rvalue_reference_v = false;
+
+	template <typename Type>
+	inline constexpr bool is_rvalue_reference_v<Type&&> = true;
+
+	template <typename Type>
+	struct is_rvalue_reference : bool_constant<is_rvalue_reference_v<Type>> {};
+
+	template <typename Type>
+	inline constexpr bool is_reference_v = is_lvalue_reference_v<Type> || is_rvalue_reference_v<Type>;
+
+	template <typename Type>
+	struct is_reference : bool_constant<is_lvalue_reference_v<Type>> {};
+
+	template <typename Type>
+	inline constexpr bool always_false = false;
+
+	template <typename Type>
+	Type && declval() noexcept {
+		static_assert(always_false<Type>, "DO NOT CALL declval()");
+	}
+
+	template <typename Type, typename = void>
+	struct add_reference_impl {
+		using lvref_type = Type;
+		using rvref_type = Type;
+	};
+
+	template <typename Type>
+	struct add_reference_impl<Type, void_t<Type>> {
+		using lvref_type = Type &;
+		using rvref_type = Type &&;
+	};
+
+	template <typename Type>
+	using add_lvalue_reference_t = typename add_reference_impl<Type>::lvref_type;
+
+	template <typename Type>
+	struct add_lvalue_reference : type_wrapper<add_lvalue_reference_t<Type>> {};
+	
+	template <typename Type>
+	using add_rvalue_reference_t = typename add_reference_impl<Type>::rvref_type;
+
+	template <typename Type>
+	struct add_rvalue_reference : type_wrapper<add_rvalue_reference_t<Type>> {};
 };
 
